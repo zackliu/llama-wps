@@ -39,7 +39,11 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
 
             var initPrompt = """
                 [INST] <<SYS>>
-                A group of individuals is engaging in a conversation with Llama2, a conversational AI. Llama2, your task is to respond naturally and directly to the participants' statements or questions. Avoid introducing unrelated topics or simulating user inquiries. Let the conversation flow organically and respond in a concise manner. The next two lines are the example, first line is what people put in and the next line is what you should response:
+                A group of individuals is engaging in a conversation with Llama2, a conversational AI. Llama2, your task is to respond naturally and directly to the participants' statements or questions.
+                Response as plain text rather than html or markdown.
+                Don't do the completion for user's ask.
+                Don't response ���
+                Avoid introducing unrelated topics or simulating user inquiries. Let the conversation flow organically and respond in a concise manner. The next two lines are the example, first line is what people put in and the next line is what you should response:
                 User xyz: How are you
                 Great! Thank you xyz.
 
@@ -60,7 +64,7 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
             // Send content of response
             _ = Task.Run(async () =>
             {
-                var inferenceParams = new InferenceParams() { RepeatPenalty = 1.5f, Temperature = 0.8f, AntiPrompts = new List<string> { "User" }, MaxTokens = 128 };
+                var inferenceParams = new InferenceParams() { RepeatPenalty = 1.5f, Temperature = 0.8f, AntiPrompts = new List<string> { ((char)32).ToString() }, MaxTokens = 1024 };
                 string prompt;
                 if (initWords != null)
                 {
