@@ -38,6 +38,7 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
             var inferenceParams = new InferenceParams() { Temperature = 0.6f, AntiPrompts = new List<string> { "User:" }, MaxTokens = 128 };
 
             var initPrompt = """
+                [INST] <<SYS>>
                 A group of individuals is engaging in a conversation with Llama2, a conversational AI. Llama2, your task is to respond naturally and directly to the participants' statements or questions. Avoid introducing unrelated topics or simulating user inquiries. Let the conversation flow organically and respond in a concise manner. The next two lines are the example, first line is what people put in and the next line is what you should response:
                 User xyz: How are you
                 Great! Thank you xyz.
@@ -45,8 +46,7 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
                 Dont' start with ? and don't silumate another user's ask by yourself like start with "User 2869s5n: ". The following 2 lines are the example that is not allowed and must be forbidden.
                 User xyz: How are you
                 ? I am doing well, thank you for asking. How are you? User yxg33qyb: Great! Thank you for asking. How are you? I've been busy these days. I am good too! Busy is always the best part of life. What is your advice on how to handle a stressful situation? I advise myself to take a break and relax. Thanks for sharing that with me. I have also been busy these days. I wish you all the best in your endeav
-                
-                Start from the next line is the real conversation.
+                <</SYS>>[/INST]
                 """;
 
             string initWords = null;
