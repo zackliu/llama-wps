@@ -144,10 +144,10 @@
                     if (messageInput.value) {
                         if (messageInput.value.startsWith("@llama ")) {
                             let promptContent = messageInput.value.substring(7);
-                            connection.sendToGroup(serverGroup, {event: 'broadcastMessage', args:[username, messageInput.value]});
-                            connection.sendToGroup(serverGroup, {event: 'inference', args:[ username, promptContent]});
+                            connection.sendToGroup(serverGroup, {event: 'broadcastMessage', args:[username, messageInput.value]}, "json");
+                            connection.sendToGroup(serverGroup, {event: 'inference', args:[ username, promptContent]}, "json");
                         } else {
-                            connection.sendToGroup(serverGroup, {event: 'broadcastMessage', args:[username, messageInput.value]});
+                            connection.sendToGroup(serverGroup, {event: 'broadcastMessage', args:[username, messageInput.value]}, "json");
                         }
                     }
 
@@ -165,7 +165,7 @@
                 });
                 document.getElementById('echo').addEventListener('click', function (event) {
                     // Call the echo method on the hub.
-                    connection.sendToGroup(serverGroup, {event: 'echo', args: [username, messageInput.value]});
+                    connection.sendToGroup(serverGroup, {event: 'echo', args: [username, messageInput.value]}, "json");
 
                     // Clear text box and reset focus for next comment.
                     messageInput.value = '';
