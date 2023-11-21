@@ -1,7 +1,7 @@
 import json
 import os
 from flask import Flask, render_template, request
-# from llama_cpp import Llama
+from llama_cpp import Llama
 import uuid
 from azure.messaging.webpubsubservice import WebPubSubServiceClient
 from azure.messaging.webpubsubclient import WebPubSubClient, WebPubSubClientCredential
@@ -15,7 +15,7 @@ app = Flask(__name__, static_url_path='', template_folder="web/templates", stati
 # connection_string = os.environ['WEBPUBSUB_CONNECTION_STRING']
 connection_string = ""
 service = WebPubSubServiceClient.from_connection_string(connection_string=connection_string, hub='hub')
-# llm = Llama(model_path="../../../module/llama-2-7b-chat.Q2_K.gguf")
+llm = Llama(model_path="../../../module/llama-2-7b-chat.Q2_K.gguf")
 serverGroup = "serverGroup"
 clientGroup = "clientGroup"
 
@@ -41,15 +41,16 @@ def on_group_message(msg: OnGroupDataMessageArgs):
     elif data["event"] == "inference":
         username = data["args"][0]
         prompt = data["args"][1]
-        id = uuid.uuid4()
-        # stream = llm(
-        #     "User {0}: {1}".format(username, prompt),
-        #     max_tokens=128,
-        #     stop=["Q:", "\n"],
-        #     stream=True,
-        # )
-        # for output in stream:
-        #     client.send_to_group(clientGroup, {"name": "LLAMA", "id":id, "message": output}, "json", no_echo=False, ack=False )
+        id = str(uuid.uuid4())
+        stream = llm(
+            "User {0}: {1}".format(username, prompt),
+            max_tokens=128,
+            stop=["Q:", "\n"],
+            stream=True,
+        )
+        for output in stream:
+            value = output["choices"][0]["text"]
+            client.send_to_group(clientGroup, {"name": "LLAMA", "id":id, "message": value}, "json", no_echo=False, ack=False )
 
 
 def bindMessage(client: WebPubSubClient):
@@ -65,4 +66,4 @@ if __name__ == '__main__':
     with client:
         client.join_group(serverGroup)
         bindMessage(client)
-        app.run(debug=True)
+        app.run()
