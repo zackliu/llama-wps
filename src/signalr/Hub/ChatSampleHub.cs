@@ -20,12 +20,16 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
     {
         private readonly IModelService _modelService;
         private readonly IHubContext<ChatSampleHub> _context;
-        private static bool init = false;
 
-        public ChatSampleHub(IModelService modelService, IHubContext<ChatSampleHub> context)
+        private readonly AsyncLock _asyncLock;
+
+        private static int _init = 0;
+
+        public ChatSampleHub(IModelService modelService, AsyncLock asyncLock, IHubContext<ChatSampleHub> context)
         {
             _context = context;
             _modelService = modelService;
+            _asyncLock = asyncLock;
         }
 
         public async Task Inference(string username, string message)
@@ -39,7 +43,11 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
 
             var initPrompt = """
                 [INST] <<SYS>>
-                A group of individuals is engaging in a conversation with Llama2, a conversational AI. Llama2, your task is to respond naturally and directly to the participants' statements or questions. Avoid introducing unrelated topics or simulating user inquiries. Let the conversation flow organically and respond in a concise manner. The next two lines are the example, first line is what people put in and the next line is what you should response:
+                A group of individuals is engaging in a conversation with Llama2, a conversational AI. Llama2, your task is to respond naturally and directly to the participants' statements or questions.
+                Response as plain text rather than html or markdown.
+                Don't do the completion for user's ask.
+                Don't response ���
+                Avoid introducing unrelated topics or simulating user inquiries. Let the conversation flow organically and respond in a concise manner. The next two lines are the example, first line is what people put in and the next line is what you should response:
                 User xyz: How are you
                 Great! Thank you xyz.
 
@@ -51,29 +59,36 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
 
             string initWords = null;
 
-            if (!init)
+            if (Interlocked.CompareExchange(ref _init, 1, 0) == 0)
             {
                 initWords = initPrompt;
-                init = true;
             }
 
             // Send content of response
             _ = Task.Run(async () =>
             {
-                var inferenceParams = new InferenceParams() { RepeatPenalty = 1.5f, Temperature = 0.8f, AntiPrompts = new List<string> { "User" }, MaxTokens = 128 };
-                string prompt;
-                if (initWords != null)
+                await _asyncLock.WaitAsync();
+                try
                 {
-                    prompt = $"{initWords}\nUser {username}: {message}";
-                }
-                else
-                {
-                    prompt = $"User {username}: {message}";
-                }
+                    var inferenceParams = new InferenceParams() { RepeatPenalty = 1.5f, Temperature = 0.8f, AntiPrompts = new List<string> { ((char)32).ToString(), "User" }, MaxTokens = 1024 };
+                    string prompt;
+                    if (initWords != null)
+                    {
+                        prompt = $"{initWords}\nUser {username}: {message}";
+                    }
+                    else
+                    {
+                        prompt = $"User {username}: {message}";
+                    }
 
-                await foreach (var token in executor.InferAsync(prompt, inferenceParams, cts.Token))
+                    await foreach (var token in executor.InferAsync(prompt, inferenceParams, cts.Token))
+                    {
+                        await _context.Clients.All.SendAsync("broadcastMessage", "LLAMA", id, token);
+                    }
+                }
+                finally
                 {
-                    await _context.Clients.All.SendAsync("broadcastMessage", "LLAMA", id, token);
+                    _asyncLock.Release();
                 }
             });
         }

@@ -32,10 +32,9 @@ namespace LLama.Web.Services
 
             var parameters = new ModelParams(_configuration.Models.ModelPath)
             {
-                ContextSize = 2048,
+                ContextSize = 4096,
                 Seed = 1337,
-                GpuLayerCount = 6,
-                Threads = 16
+                GpuLayerCount = 48,
             };
             var model = LLamaWeights.LoadFromFile(parameters);
             var context = model.CreateContext(parameters);

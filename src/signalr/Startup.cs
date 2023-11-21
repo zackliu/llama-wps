@@ -18,8 +18,9 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
                 .PostConfigure(x => x.Initialize())
                 .BindConfiguration(nameof(LLamaOptions));
             services.AddHostedService<ModelLoaderService>();
-            services.AddSignalR();
-                    //.AddAzureSignalR();
+            services.AddSignalR()
+                    .AddAzureSignalR();
+            services.AddSingleton<AsyncLock>();
             services.AddSingleton<IModelService, ModelService>();
         }
 
